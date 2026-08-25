@@ -9,12 +9,10 @@ const router = express.Router();
 // ============================================================
 
 router.get("/", async (req, res) => {
-
     try {
 
         const result = await pool.query(`
             SELECT
-
                 m.*,
 
                 c.category_name,
@@ -23,48 +21,73 @@ router.get("/", async (req, res) => {
 
                 l.location_name,
 
+                COALESCE(
+                    SUM(ms.current_quantity),
+                    0
+                ) AS quantity,
+
+                COALESCE(
+                    SUM(ms.current_quantity),
+                    0
+                ) AS current_stock,
+
+                COALESCE(
+                    SUM(ms.current_quantity),
+                    0
+                ) AS stock_quantity,
+
+                COALESCE(
+                    SUM(ms.current_quantity),
+                    0
+                ) AS stock_level,
+
                 CASE
-                    WHEN m.quantity <= m.reorder_level
-                        THEN 'Critical'
+                    WHEN COALESCE(SUM(ms.current_quantity), 0)
+                         <= m.reorder_level
+                    THEN 'Critical'
 
-                    WHEN m.quantity <= (m.reorder_level * 2)
-                        THEN 'Moderate'
+                    WHEN COALESCE(SUM(ms.current_quantity), 0)
+                         <= m.reorder_level + 20
+                    THEN 'Low'
 
-                    ELSE 'Healthy'
-                END AS stock_level
+                    ELSE 'Normal'
+                END AS stock_status
 
-            FROM public.medicines m
+            FROM medicines m
 
-            LEFT JOIN public.categories c
+            LEFT JOIN categories c
                 ON m.category_id = c.category_id
 
-            LEFT JOIN public.suppliers s
+            LEFT JOIN suppliers s
                 ON m.supplier_id = s.supplier_id
 
-            LEFT JOIN public.medicinelocations l
+            LEFT JOIN medicinelocations l
                 ON m.location_id = l.location_id
 
-            ORDER BY m.medicine_id ASC
+            LEFT JOIN medicinestock ms
+                ON m.medicine_id = ms.medicine_id
+
+            GROUP BY
+                m.medicine_id,
+                c.category_name,
+                s.supplier_name,
+                l.location_name
+
+            ORDER BY
+                m.medicine_name ASC
         `);
 
-
-        res.status(200).json(result.rows);
+        res.json(result.rows);
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR FETCHING MEDICINES");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "GET MEDICINES ERROR:",
+            error
+        );
 
         res.status(500).json({
-            success: false,
-            error: "Failed to fetch medicines",
-            detail: error.message
+            error: "Failed to fetch medicines"
         });
     }
 });
@@ -82,28 +105,21 @@ router.get("/categories", async (req, res) => {
             SELECT
                 category_id,
                 category_name
-            FROM public.categories
+            FROM categories
             ORDER BY category_name ASC
         `);
 
-
-        res.status(200).json(result.rows);
+        res.json(result.rows);
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR FETCHING CATEGORIES");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "GET CATEGORIES ERROR:",
+            error
+        );
 
         res.status(500).json({
-            success: false,
-            error: "Failed to fetch categories",
-            detail: error.message
+            error: "Failed to fetch categories"
         });
     }
 });
@@ -121,28 +137,22 @@ router.get("/suppliers", async (req, res) => {
             SELECT
                 supplier_id,
                 supplier_name
-            FROM public.suppliers
+            FROM suppliers
+            WHERE status = 'Active'
             ORDER BY supplier_name ASC
         `);
 
-
-        res.status(200).json(result.rows);
+        res.json(result.rows);
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR FETCHING SUPPLIERS");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "GET SUPPLIERS ERROR:",
+            error
+        );
 
         res.status(500).json({
-            success: false,
-            error: "Failed to fetch suppliers",
-            detail: error.message
+            error: "Failed to fetch suppliers"
         });
     }
 });
@@ -160,28 +170,21 @@ router.get("/locations", async (req, res) => {
             SELECT
                 location_id,
                 location_name
-            FROM public.medicinelocations
+            FROM medicinelocations
             ORDER BY location_name ASC
         `);
 
-
-        res.status(200).json(result.rows);
+        res.json(result.rows);
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR FETCHING LOCATIONS");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "GET LOCATIONS ERROR:",
+            error
+        );
 
         res.status(500).json({
-            success: false,
-            error: "Failed to fetch locations",
-            detail: error.message
+            error: "Failed to fetch locations"
         });
     }
 });
@@ -194,292 +197,109 @@ router.get("/locations", async (req, res) => {
 router.post("/", async (req, res) => {
 
     const {
-
         category_id,
         supplier_id,
         location_id,
-
         medicine_name,
         generic_name,
         brand_name,
-
         dosage,
         dosage_form,
         strength,
-
         barcode,
-        sku,
-
-        manufacturer,
-
         unit_price,
         reorder_level,
-        quantity,
-
-        batch_number,
-        manufacturing_date,
-        expiry_date,
-        last_audit_date,
-
         description,
-
         requires_prescription,
-
         status,
-
+        sku,
+        manufacturer,
         medicine_image,
-
         storage_condition
-
     } = req.body;
-
-
-    // ========================================================
-    // VALIDATION
-    // ========================================================
-
-    if (!category_id) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Category is required"
-        });
-    }
-
-
-    if (!supplier_id) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Supplier is required"
-        });
-    }
-
-
-    if (!medicine_name || !medicine_name.trim()) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Medicine name is required"
-        });
-    }
-
-
-    if (
-        unit_price === undefined ||
-        unit_price === null ||
-        unit_price === ""
-    ) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Unit price is required"
-        });
-    }
-
-
-    // ========================================================
-    // INSERT
-    // ========================================================
 
     try {
 
+        if (
+            !category_id ||
+            !supplier_id ||
+            !medicine_name ||
+            !unit_price
+        ) {
+
+            return res.status(400).json({
+                error:
+                    "Category, supplier, medicine name and unit price are required."
+            });
+        }
+
+
         const result = await pool.query(
             `
-            INSERT INTO public.medicines (
-
+            INSERT INTO medicines (
                 category_id,
                 supplier_id,
                 location_id,
-
                 medicine_name,
                 generic_name,
                 brand_name,
-
                 dosage,
                 dosage_form,
                 strength,
-
                 barcode,
-                sku,
-
-                manufacturer,
-
                 unit_price,
                 reorder_level,
-                quantity,
-
-                batch_number,
-                manufacturing_date,
-                expiry_date,
-                last_audit_date,
-
                 description,
-
                 requires_prescription,
-
                 status,
-
+                sku,
+                manufacturer,
                 medicine_image,
-
                 storage_condition
-
             )
-
             VALUES (
-
-                $1,
-                $2,
-                $3,
-
-                $4,
-                $5,
-                $6,
-
-                $7,
-                $8,
-                $9,
-
-                $10,
-                $11,
-
-                $12,
-
-                $13,
-                $14,
-                $15,
-
-                $16,
-                $17,
-                $18,
-                $19,
-
-                $20,
-
-                $21,
-
-                $22,
-
-                $23,
-
-                $24
-
+                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+                $11,$12,$13,$14,$15,$16,$17,$18,$19
             )
-
             RETURNING *
             `,
-
             [
-
-                Number(category_id),
-
-                Number(supplier_id),
-
-                location_id
-                    ? Number(location_id)
-                    : null,
-
-
-                medicine_name.trim(),
-
-                generic_name?.trim() || null,
-
-                brand_name?.trim() || null,
-
-
-                dosage?.trim() || null,
-
-                dosage_form?.trim() || null,
-
-                strength?.trim() || null,
-
-
-                barcode?.trim() || null,
-
-                sku?.trim() || null,
-
-
-                manufacturer?.trim() || null,
-
-
-                Number(unit_price),
-
-                reorder_level
-                    ? Number(reorder_level)
-                    : 0,
-
-                quantity
-                    ? Number(quantity)
-                    : 0,
-
-
-                batch_number?.trim() || null,
-
-
-                manufacturing_date
-                    || null,
-
-
-                expiry_date
-                    || null,
-
-
-                last_audit_date
-                    || null,
-
-
-                description?.trim() || null,
-
-
-                Boolean(requires_prescription),
-
-
+                category_id,
+                supplier_id,
+                location_id || null,
+                medicine_name,
+                generic_name || null,
+                brand_name || null,
+                dosage || null,
+                dosage_form || null,
+                strength || null,
+                barcode || null,
+                unit_price,
+                reorder_level || 10,
+                description || null,
+                requires_prescription || false,
                 status || "Active",
-
-
-                medicine_image?.trim() || null,
-
-
-                storage_condition?.trim() || null
-
+                sku || null,
+                manufacturer || null,
+                medicine_image || null,
+                storage_condition || null
             ]
         );
 
-
-        res.status(201).json({
-
-            success: true,
-
-            message:
-                "Medicine added successfully",
-
-            medicine:
-                result.rows[0]
-
-        });
-
+        res.status(201).json(result.rows[0]);
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR ADDING MEDICINE");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "ADD MEDICINE ERROR:",
+            error
+        );
 
         res.status(500).json({
-
-            success: false,
-
             error:
-                "Failed to add medicine",
-
-            detail:
-                error.message
-
+                error.code === "23505"
+                    ? "Barcode or SKU already exists."
+                    : "Failed to add medicine."
         });
     }
 });
@@ -493,283 +313,102 @@ router.put("/:id", async (req, res) => {
 
     const { id } = req.params;
 
-
     const {
-
         category_id,
         supplier_id,
         location_id,
-
         medicine_name,
         generic_name,
         brand_name,
-
         dosage,
         dosage_form,
         strength,
-
         barcode,
-        sku,
-
-        manufacturer,
-
         unit_price,
         reorder_level,
-        quantity,
-
-        batch_number,
-        manufacturing_date,
-        expiry_date,
-        last_audit_date,
-
         description,
-
         requires_prescription,
-
         status,
-
+        sku,
+        manufacturer,
         medicine_image,
-
         storage_condition
-
     } = req.body;
-
-
-    // ========================================================
-    // VALIDATION
-    // ========================================================
-
-    if (!category_id) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Category is required"
-        });
-    }
-
-
-    if (!supplier_id) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Supplier is required"
-        });
-    }
-
-
-    if (!medicine_name || !medicine_name.trim()) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Medicine name is required"
-        });
-    }
-
-
-    if (
-        unit_price === undefined ||
-        unit_price === null ||
-        unit_price === ""
-    ) {
-
-        return res.status(400).json({
-            success: false,
-            error: "Unit price is required"
-        });
-    }
-
-
-    // ========================================================
-    // UPDATE
-    // ========================================================
 
     try {
 
         const result = await pool.query(
             `
-            UPDATE public.medicines
+            UPDATE medicines
 
             SET
-
                 category_id = $1,
-
                 supplier_id = $2,
-
                 location_id = $3,
-
                 medicine_name = $4,
-
                 generic_name = $5,
-
                 brand_name = $6,
-
                 dosage = $7,
-
                 dosage_form = $8,
-
                 strength = $9,
-
                 barcode = $10,
-
-                sku = $11,
-
-                manufacturer = $12,
-
-                unit_price = $13,
-
-                reorder_level = $14,
-
-                quantity = $15,
-
-                batch_number = $16,
-
-                manufacturing_date = $17,
-
-                expiry_date = $18,
-
-                last_audit_date = $19,
-
-                description = $20,
-
-                requires_prescription = $21,
-
-                status = $22,
-
-                medicine_image = $23,
-
-                storage_condition = $24,
-
+                unit_price = $11,
+                reorder_level = $12,
+                description = $13,
+                requires_prescription = $14,
+                status = $15,
+                sku = $16,
+                manufacturer = $17,
+                medicine_image = $18,
+                storage_condition = $19,
                 updated_at = CURRENT_TIMESTAMP
 
-            WHERE medicine_id = $25
+            WHERE medicine_id = $20
 
             RETURNING *
             `,
-
             [
-
-                Number(category_id),
-
-                Number(supplier_id),
-
-                location_id
-                    ? Number(location_id)
-                    : null,
-
-
-                medicine_name.trim(),
-
-                generic_name?.trim() || null,
-
-                brand_name?.trim() || null,
-
-
-                dosage?.trim() || null,
-
-                dosage_form?.trim() || null,
-
-                strength?.trim() || null,
-
-
-                barcode?.trim() || null,
-
-                sku?.trim() || null,
-
-
-                manufacturer?.trim() || null,
-
-
-                Number(unit_price),
-
-                reorder_level
-                    ? Number(reorder_level)
-                    : 0,
-
-                quantity
-                    ? Number(quantity)
-                    : 0,
-
-
-                batch_number?.trim() || null,
-
-                manufacturing_date
-                    || null,
-
-                expiry_date
-                    || null,
-
-                last_audit_date
-                    || null,
-
-
-                description?.trim() || null,
-
-
-                Boolean(requires_prescription),
-
-
+                category_id,
+                supplier_id,
+                location_id || null,
+                medicine_name,
+                generic_name || null,
+                brand_name || null,
+                dosage || null,
+                dosage_form || null,
+                strength || null,
+                barcode || null,
+                unit_price,
+                reorder_level || 10,
+                description || null,
+                requires_prescription || false,
                 status || "Active",
-
-
-                medicine_image?.trim() || null,
-
-
-                storage_condition?.trim() || null,
-
-
-                Number(id)
-
+                sku || null,
+                manufacturer || null,
+                medicine_image || null,
+                storage_condition || null,
+                id
             ]
         );
-
 
         if (result.rows.length === 0) {
 
             return res.status(404).json({
-
-                success: false,
-
-                error:
-                    "Medicine not found"
-
+                error: "Medicine not found."
             });
         }
 
-
-        res.status(200).json({
-
-            success: true,
-
-            message:
-                "Medicine updated successfully",
-
-            medicine:
-                result.rows[0]
-
-        });
-
+        res.json(result.rows[0]);
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR UPDATING MEDICINE");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "UPDATE MEDICINE ERROR:",
+            error
+        );
 
         res.status(500).json({
-
-            success: false,
-
-            error:
-                "Failed to update medicine",
-
-            detail:
-                error.message
-
+            error: "Failed to update medicine."
         });
     }
 });
@@ -783,66 +422,37 @@ router.delete("/:id", async (req, res) => {
 
     const { id } = req.params;
 
-
     try {
 
         const result = await pool.query(
             `
-            DELETE FROM public.medicines
-
+            DELETE FROM medicines
             WHERE medicine_id = $1
-
             RETURNING medicine_id
             `,
-
-            [Number(id)]
+            [id]
         );
-
 
         if (result.rows.length === 0) {
 
             return res.status(404).json({
-
-                success: false,
-
-                error:
-                    "Medicine not found"
-
+                error: "Medicine not found."
             });
         }
 
-
-        res.status(200).json({
-
-            success: true,
-
-            message:
-                "Medicine deleted successfully"
-
+        res.json({
+            message: "Medicine deleted successfully."
         });
-
 
     } catch (error) {
 
-        console.error("=================================");
-        console.error("ERROR DELETING MEDICINE");
-        console.error("Message:", error.message);
-        console.error("Code:", error.code);
-        console.error("Detail:", error.detail);
-        console.error("Hint:", error.hint);
-        console.error("=================================");
-
+        console.error(
+            "DELETE MEDICINE ERROR:",
+            error
+        );
 
         res.status(500).json({
-
-            success: false,
-
-            error:
-                "Failed to delete medicine",
-
-            detail:
-                error.message
-
+            error: "Failed to delete medicine."
         });
     }
 });

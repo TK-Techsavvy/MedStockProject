@@ -1,275 +1,411 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import {
+    NavLink,
+    useNavigate
+} from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
 
+
 const Sidebar = () => {
+
     const navigate = useNavigate();
-    const { user } = useAuth();
+
+    const {
+        user,
+        logout
+    } = useAuth();
+
+
+    // =========================================================
+    // ROLE
+    // =========================================================
+
+    const userRole = String(user?.role || "")
+        .trim()
+        .toLowerCase();
+
+
+    const isAdmin =
+        userRole === "administrator";
+
+
+    // =========================================================
+    // NAVIGATION
+    // =========================================================
 
     const navigation = [
+
         {
             name: "Dashboard",
             path: "/admin/dashboard",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
-                    <rect x="3" y="3" width="7" height="7" rx="1" />
-                    <rect x="14" y="3" width="7" height="7" rx="1" />
-                    <rect x="3" y="14" width="7" height="7" rx="1" />
-                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                    <path d="M3 13h8V3H3v10Z" />
+                    <path d="M13 21h8V11h-8v10Z" />
+                    <path d="M13 3h8v4h-8V3Z" />
+                    <path d="M3 17h8v4H3v-4Z" />
                 </svg>
             ),
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "manager",
+                "inventory officer",
+                "storekeeper"
+            ]
         },
+
         {
-            name: "Medicine",
+            name: "Medicines",
             path: "/admin/medicines",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
-                    <path d="M10.5 3.5h3v4h-3z" />
-                    <path d="M8 7.5h8a2 2 0 0 1 2 2v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8a2 2 0 0 1 2-2Z" />
-                    <path d="M9 13h6" />
-                    <path d="M12 10v6" />
+                    <path d="M10.5 3.5h3" />
+                    <path d="M9 3.5h6v3l1.5 2.5V19a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2V9l1.5-2.5v-3Z" />
+                    <path d="M8 11h8" />
+                    <path d="M10 15h4" />
                 </svg>
             ),
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "manager",
+                "inventory officer",
+                "storekeeper"
+            ]
         },
+
         {
             name: "Suppliers",
             path: "/admin/suppliers",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
-                    <path d="M3 7h11v10H3z" />
-                    <path d="M14 10h4l3 3v4h-7z" />
-                    <circle cx="7" cy="19" r="2" />
-                    <circle cx="18" cy="19" r="2" />
+                    <path d="M3 7h11v10H3V7Z" />
+                    <path d="M14 10h4l3 3v4h-7v-7Z" />
+                    <path d="M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                    <path d="M18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
                 </svg>
             ),
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "manager",
+                "inventory officer",
+                "storekeeper"
+            ]
         },
+
         {
             name: "Transactions",
             path: "/admin/transactions",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
-                    <path d="M4 7h13" />
-                    <path d="m13 3 4 4-4 4" />
-                    <path d="M20 17H7" />
-                    <path d="m11 13-4 4 4 4" />
+                    <path d="M4 5h16" />
+                    <path d="M4 9h16" />
+                    <path d="M4 13h10" />
+                    <path d="M4 17h8" />
+                    <path d="M17 15v6" />
+                    <path d="m14 18 3 3 3-3" />
                 </svg>
             ),
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "inventory officer",
+                "storekeeper"
+            ]
         },
+
         {
             name: "Orders",
             path: "/admin/orders",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
-                    <path d="M6 3h12l1 4H5z" />
-                    <path d="M5 7h14v13H5z" />
-                    <path d="M9 11h6" />
-                    <path d="M9 15h6" />
+                    <path d="M4 4h16v16H4V4Z" />
+                    <path d="M8 8h8" />
+                    <path d="M8 12h8" />
+                    <path d="M8 16h5" />
                 </svg>
             ),
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "manager",
+                "inventory officer"
+            ]
         },
+
         {
             name: "Reports",
             path: "/admin/reports",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
                     <path d="M4 19V5" />
-                    <path d="M4 19h16" />
-                    <path d="m7 15 3-4 3 2 5-7" />
+                    <path d="M4 19h17" />
+                    <path d="m7 15 4-4 3 2 5-6" />
                 </svg>
             ),
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "manager",
+                "inventory officer"
+            ]
         },
+
         {
             name: "Users",
             path: "/admin/users",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
-                    <circle cx="9" cy="8" r="3" />
-                    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-                    <path d="M16 11c2.2 0 4 1.8 4 4" />
-                    <path d="M16 5.5a2.5 2.5 0 0 1 0 5" />
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
             ),
+
+            roles: [
+                "administrator"
+            ]
         },
+
         {
             name: "Settings",
             path: "/admin/settings",
             icon: (
                 <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
                     fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                 >
                     <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6.4v-2.6h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.1H15v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+                    <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.42 1.42-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-2v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 9.4 15a1.7 1.7 0 0 0-1.55-1.03H7v-2h.09A1.7 1.7 0 0 0 8.64 11a1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.42-1.42.06.06a1.7 1.7 0 0 0 1.88.34A1.7 1.7 0 0 0 12.63 6.5V6h2v.5a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.42 1.42-.06.06A1.7 1.7 0 0 0 18.6 11a1.7 1.7 0 0 0 1.55 1.03H20v2h-.5A1.7 1.7 0 0 0 19.4 15Z" />
                 </svg>
             ),
-        },
+
+            roles: [
+                "administrator",
+                "pharmacist",
+                "manager",
+                "inventory officer",
+                "storekeeper"
+            ]
+        }
+
     ];
 
-    const handleSignOut = () => {
+
+    // =========================================================
+    // FILTER NAVIGATION
+    // =========================================================
+
+    const visibleNavigation =
+        navigation.filter(item =>
+            item.roles.includes(userRole)
+        );
+
+
+    // =========================================================
+    // LOGOUT
+    // =========================================================
+
+    const handleLogout = () => {
+
+        if (logout) {
+            logout();
+        }
+
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        navigate("/login", { replace: true });
+
+        navigate("/login", {
+            replace: true
+        });
     };
 
+
+    // =========================================================
+    // NAV LINK
+    // =========================================================
+
+    const navLinkClass = ({ isActive }) => {
+
+        return `
+            group
+            flex
+            items-center
+            gap-3
+            rounded-[7px]
+            px-3
+            py-2.5
+            text-[11px]
+            font-medium
+            transition-all
+            duration-150
+            ${
+                isActive
+                    ? "bg-[#e9f2fa] text-[#00549a]"
+                    : "text-[#667085] hover:bg-[#f5f8fb] hover:text-[#00549a]"
+            }
+        `;
+    };
+
+
     return (
-        <aside
-            className="
-                fixed
-                left-0
-                top-0
-                z-50
-                flex
-                h-screen
-                w-[141px]
-                flex-col
-                border-r
-                border-[#dce3ed]
-                bg-[#eef3ff]
-            "
-        >
 
-            {/* ================================
+        <aside className="fixed left-0 top-0 z-40 flex h-screen w-[230px] flex-col border-r border-[#e1e7ef] bg-white">
+
+
+            {/* =====================================================
                 LOGO
-            ================================= */}
+            ===================================================== */}
 
-            <div
-                className="
-                    flex
-                    h-[52px]
-                    items-center
-                    gap-2
-                    border-b
-                    border-[#dce3ed]
-                    px-3
-                "
-            >
+            <div className="flex h-[70px] items-center border-b border-[#e8edf3] px-5">
 
-                <div
-                    className="
-                        flex
-                        h-[21px]
-                        w-[21px]
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-[5px]
-                        bg-[#00549a]
-                        text-[11px]
-                        font-bold
-                        text-white
-                    "
-                >
-                    ✚
-                </div>
+                <div className="flex items-center gap-3">
 
-                <div className="min-w-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[#00549a]">
 
-                    <h1
-                        className="
-                            truncate
-                            text-[10px]
-                            font-bold
-                            leading-tight
-                            text-[#172033]
-                        "
-                    >
-                        MediStock IMS
-                    </h1>
+                        <svg
+                            className="h-5 w-5 text-white"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7V3Z" />
+                        </svg>
 
-                    <p
-                        className="
-                            text-[6px]
-                            leading-tight
-                            text-[#6f7b8c]
-                        "
-                    >
-                        Inventory Control
-                    </p>
+                    </div>
+
+                    <div>
+
+                        <h1 className="text-[15px] font-bold tracking-tight text-[#17233c]">
+                            MediStock
+                        </h1>
+
+                        <p className="text-[8px] uppercase tracking-[0.12em] text-[#98a2b3]">
+                            Inventory System
+                        </p>
+
+                    </div>
 
                 </div>
 
             </div>
 
 
-            {/* ================================
+            {/* =====================================================
+                USER
+            ===================================================== */}
+
+            <div className="border-b border-[#e8edf3] px-4 py-4">
+
+                <div className="flex items-center gap-3">
+
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1f8] text-[11px] font-bold text-[#00549a]">
+
+                        {user?.firstName?.charAt(0)?.toUpperCase() || "U"}
+
+                    </div>
+
+
+                    <div className="min-w-0">
+
+                        <p className="truncate text-[11px] font-semibold text-[#17233c]">
+
+                            {user?.firstName || "User"}{" "}
+                            {user?.lastName || ""}
+
+                        </p>
+
+                        <p className="truncate text-[9px] text-[#8b95a7]">
+
+                            {user?.role || "User"}
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {/* =====================================================
                 NAVIGATION
-            ================================= */}
+            ===================================================== */}
 
-            <nav className="flex-1 px-2 py-7">
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
 
-                <div className="space-y-[3px]">
+                <p className="mb-2 px-3 text-[8px] font-semibold uppercase tracking-[0.12em] text-[#a1aab8]">
+                    Main Menu
+                </p>
 
-                    {navigation.map((item) => (
+
+                <div className="space-y-1">
+
+                    {visibleNavigation.map((item) => (
 
                         <NavLink
                             key={item.path}
                             to={item.path}
-                            className={({ isActive }) =>
-                                `
-                                flex
-                                h-[25px]
-                                items-center
-                                gap-2
-                                rounded-[12px]
-                                px-3
-                                text-[8px]
-                                font-medium
-                                transition-all
-                                ${
-                                    isActive
-                                        ? "bg-[#00549a] text-white shadow-sm"
-                                        : "text-[#3f4b5d] hover:bg-white/70 hover:text-[#00549a]"
-                                }
-                                `
-                            }
+                            className={navLinkClass}
                         >
 
-                            <span className="flex w-[14px] items-center justify-center">
+                            <span className="shrink-0">
                                 {item.icon}
                             </span>
 
@@ -286,94 +422,52 @@ const Sidebar = () => {
             </nav>
 
 
-            {/* ================================
-                BOTTOM SECTION
-            ================================= */}
+            {/* =====================================================
+                ADMIN INDICATOR
+            ===================================================== */}
 
-            <div
-                className="
-                    border-t
-                    border-[#dce3ed]
-                    px-3
-                    py-4
-                "
-            >
+            {isAdmin && (
 
-                {/* Support */}
+                <div className="mx-3 mb-3 rounded-[7px] border border-[#dce8f2] bg-[#f7fbfe] px-3 py-2.5">
 
-                <button
-                    type="button"
-                    className="
-                        flex
-                        w-full
-                        items-center
-                        gap-2
-                        rounded-md
-                        px-2
-                        py-2
-                        text-[8px]
-                        text-[#4d5969]
-                        transition
-                        hover:bg-white/70
-                        hover:text-[#00549a]
-                    "
-                >
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[#00549a]">
+                        Administrator
+                    </p>
 
-                    <svg
-                        className="h-3 w-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                    >
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M9.5 9a2.5 2.5 0 1 1 4.3 1.8c-.8.8-1.8 1.2-1.8 2.7" />
-                        <path d="M12 17h.01" />
-                    </svg>
+                    <p className="mt-1 text-[9px] leading-4 text-[#718096]">
+                        Full system access enabled.
+                    </p>
 
-                    <span>
-                        Support
-                    </span>
+                </div>
 
-                </button>
+            )}
 
 
-                {/* Sign Out */}
+            {/* =====================================================
+                LOGOUT
+            ===================================================== */}
+
+            <div className="border-t border-[#e8edf3] p-3">
 
                 <button
                     type="button"
-                    onClick={handleSignOut}
-                    className="
-                        flex
-                        w-full
-                        items-center
-                        gap-2
-                        rounded-md
-                        px-2
-                        py-2
-                        text-[8px]
-                        text-[#4d5969]
-                        transition
-                        hover:bg-white/70
-                        hover:text-red-600
-                    "
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-[7px] px-3 py-2.5 text-[11px] font-medium text-[#667085] transition hover:bg-[#fff5f5] hover:text-[#dc2626]"
                 >
 
                     <svg
-                        className="h-3 w-3"
-                        viewBox="0 0 24 24"
+                        className="h-4 w-4"
                         fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
-                        strokeWidth="2"
+                        strokeWidth="1.8"
                     >
                         <path d="M10 17l5-5-5-5" />
                         <path d="M15 12H3" />
-                        <path d="M21 3v18" />
+                        <path d="M21 19V5a2 2 0 0 0-2-2h-6" />
                     </svg>
 
-                    <span>
-                        Sign Out
-                    </span>
+                    Logout
 
                 </button>
 
@@ -382,5 +476,6 @@ const Sidebar = () => {
         </aside>
     );
 };
+
 
 export default Sidebar;

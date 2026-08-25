@@ -7,16 +7,22 @@ const {
 
 export const pool = new Pool({
 
-    user: process.env.DB_USER,
+    user:
+        process.env.DB_USER,
 
-    host: process.env.DB_HOST,
+    host:
+        process.env.DB_HOST,
 
-    database: process.env.DB_NAME,
+    database:
+        process.env.DB_NAME,
 
-    password: process.env.DB_PASSWORD,
+    password:
+        process.env.DB_PASSWORD,
 
     port:
-        process.env.DB_PORT || 5432
+        Number(
+            process.env.DB_PORT || 5432
+        )
 
 });
 
@@ -26,7 +32,7 @@ pool.on(
     () => {
 
         console.log(
-            "Connected to PostgreSQL database"
+            "✅ Connected to PostgreSQL database."
         );
 
     }
@@ -35,10 +41,10 @@ pool.on(
 
 pool.on(
     "error",
-    (error) => {
+    error => {
 
         console.error(
-            "Unexpected PostgreSQL error:",
+            "❌ Unexpected PostgreSQL error:",
             error
         );
 

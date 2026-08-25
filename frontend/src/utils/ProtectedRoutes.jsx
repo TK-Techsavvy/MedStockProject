@@ -1,5 +1,11 @@
 import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import {
+    Navigate,
+    useLocation
+} from "react-router-dom";
+
+import { useAuth } from "../context/AuthContext";
+
 
 const ProtectedRoutes = ({
     children,
@@ -9,19 +15,42 @@ const ProtectedRoutes = ({
 
     const location = useLocation();
 
+    const {
+        user,
+        token,
+        loading
+    } = useAuth();
 
-    // ==========================================
-    // GET LOGGED-IN USER
-    // ==========================================
 
-    const storedUser = localStorage.getItem("user");
+    // =========================================================
+    // LOADING
+    // =========================================================
+
+    if (loading) {
+
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#f8faff]">
+
+                <div className="text-center">
+
+                    <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[#dbe5f0] border-t-[#00549a]" />
+
+                    <p className="mt-3 text-[11px] text-[#69758b]">
+                        Loading...
+                    </p>
+
+                </div>
+
+            </div>
+        );
+    }
 
 
-    // ==========================================
-    // USER NOT LOGGED IN
-    // ==========================================
+    // =========================================================
+    // NOT LOGGED IN
+    // =========================================================
 
-    if (!storedUser) {
+    if (!user || !token) {
 
         return (
             <Navigate
@@ -35,73 +64,32 @@ const ProtectedRoutes = ({
     }
 
 
-    // ==========================================
-    // PARSE USER
-    // ==========================================
+    // =========================================================
+    // GET USER ROLE
+    // =========================================================
 
-    let user;
+    const userRole = String(user?.role || "")
+        .trim()
+        .toLowerCase();
 
-    try {
 
-        user = JSON.parse(storedUser);
+    // =========================================================
+    // INVALID ROLE
+    // =========================================================
 
-    } catch (error) {
-
-        console.error(
-            "Invalid user data:",
-            error
-        );
-
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
+    if (!userRole) {
 
         return (
-            <Navigate
-                to="/login"
-                replace
+            <Unauthorized
+                message="Your account does not have a valid role."
             />
         );
     }
 
 
-    // ==========================================
-    // GET USER ROLE
-    // ==========================================
-
-    const userRole = user?.role
-        ?.trim()
-        .toLowerCase();
-
-
-    // ==========================================
-    // NO ROLE
-    // ==========================================
-
-    if (!userRole) {
-
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-50">
-
-                <div className="max-w-md rounded-xl bg-white p-8 text-center shadow">
-
-                    <h1 className="text-2xl font-bold text-red-600">
-                        Unauthorized
-                    </h1>
-
-                    <p className="mt-3 text-slate-600">
-                        Your account does not have a valid role.
-                    </p>
-
-                </div>
-
-            </div>
-        );
-    }
-
-
-    // ==========================================
+    // =========================================================
     // DETERMINE REQUIRED ROLES
-    // ==========================================
+    // =========================================================
 
     const rolesToCheck =
         requiredRole.length > 0
@@ -109,19 +97,22 @@ const ProtectedRoutes = ({
             : allowedRoles;
 
 
-    // ==========================================
-    // NORMALIZE ROLES
-    // ==========================================
+    // =========================================================
+    // NORMALIZE ALLOWED ROLES
+    // =========================================================
 
-    const normalizedRoles = rolesToCheck.map(
-        (role) =>
-            role.trim().toLowerCase()
-    );
+    const normalizedRoles = rolesToCheck
+        .map(role =>
+            String(role || "")
+                .trim()
+                .toLowerCase()
+        )
+        .filter(Boolean);
 
 
-    // ==========================================
-    // CHECK PERMISSION
-    // ==========================================
+    // =========================================================
+    // ROLE CHECK
+    // =========================================================
 
     if (
         normalizedRoles.length > 0 &&
@@ -129,41 +120,94 @@ const ProtectedRoutes = ({
     ) {
 
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-50">
-
-                <div className="max-w-md rounded-xl bg-white p-8 text-center shadow">
-
-                    <h1 className="text-2xl font-bold text-red-600">
-                        Unauthorized
-                    </h1>
-
-                    <p className="mt-3 text-slate-600">
-                        You do not have permission to access this page.
-                    </p>
-
-                    <p className="mt-2 text-sm text-slate-400">
-                        Current role: {user?.role}
-                    </p>
-
-                    <button
-                        onClick={() => window.history.back()}
-                        className="mt-6 rounded-lg bg-[#00549a] px-5 py-2 text-sm font-medium text-white hover:bg-[#00427a]"
-                    >
-                        Go Back
-                    </button>
-
-                </div>
-
-            </div>
+            <Unauthorized
+                message="You do not have permission to access this page."
+                role={user.role}
+            />
         );
     }
 
 
-    // ==========================================
+    // =========================================================
     // AUTHORIZED
-    // ==========================================
+    // =========================================================
 
     return children;
 };
+
+
+// =============================================================
+// UNAUTHORIZED PAGE
+// =============================================================
+
+const Unauthorized = ({
+    message,
+    role
+}) => {
+
+    const handleGoBack = () => {
+
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = "/";
+        }
+    };
+
+
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-[#f8faff] px-5">
+
+            <div className="w-full max-w-md rounded-[10px] border border-[#dfe5ef] bg-white p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+
+                {/* ICON */}
+
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#fff1f2]">
+
+                    <svg
+                        className="h-5 w-5 text-[#dc2626]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                        <path d="M10.3 3.8 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z" />
+                    </svg>
+
+                </div>
+
+
+                <h1 className="mt-4 text-[18px] font-bold text-[#17233c]">
+                    Unauthorized
+                </h1>
+
+
+                <p className="mt-2 text-[11px] leading-5 text-[#69758b]">
+                    {message}
+                </p>
+
+
+                {role && (
+                    <p className="mt-2 text-[10px] text-[#98a2b3]">
+                        Current role: {role}
+                    </p>
+                )}
+
+
+                <button
+                    onClick={handleGoBack}
+                    className="mt-6 rounded-[6px] bg-[#00549a] px-5 py-2 text-[10px] font-semibold text-white transition hover:bg-[#00447e]"
+                >
+                    Go Back
+                </button>
+
+            </div>
+
+        </div>
+    );
+};
+
 
 export default ProtectedRoutes;
